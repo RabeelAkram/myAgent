@@ -7,41 +7,64 @@ from asgiref.sync import async_to_sync
 
 load_dotenv()
 
-# Load environment variables from .env file
-gemini_api_key = os.getenv("GEMINI_API_KEY")
-gemini_base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-gemini_model_name = "gemini-2.0-flash"
+# Setup Interface
+st.title("🤖 myAgent")
+st.write(f"Developed by Rabeel Akram")
+    
+# Selectable Models
+MODEL_OPTIONS = {
+    "Gemini": {
+        "api_key": os.getenv("GEMINI_API_KEY"),
+        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "model": "gemini-2.0-flash"
+    },
+    "Groq": {
+        "api_key": os.getenv("GROQ_API_KEY"),
+        "base_url": "https://api.groq.com/openai/v1/",
+        "model": "llama3-70b-8192"
+    },
+    "Together AI": {
+        "api_key": os.getenv("TOGETHER_API_KEY"),
+        "base_url": "https://api.together.xyz/v1/",
+        "model": "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    }
+}
 
-# Check if the environment variables are set
-if not gemini_api_key or len(gemini_api_key) <= 0:
-    st.error("Gemini API Key Not Found.")
+# Get the selected model (Use the first one as default)
+selected_model = st.selectbox("Select Model", list(MODEL_OPTIONS.keys()))
+
+# Get the Config (API key and base URL) for the selected model
+model_config = MODEL_OPTIONS[selected_model]
+
+# Check if API key and base URL are provided
+if not model_config["api_key"]:
+    st.error(f"API key not found for {selected_model}.")
+    st.stop()
+elif not model_config["base_url"]:
+    st.error(f"Base URL not found for {selected_model}.")
     st.stop()
 
-gemini_client = AsyncOpenAI(
-    api_key=gemini_api_key,
-    base_url=gemini_base_url
+ai_client = AsyncOpenAI(
+    api_key=model_config["api_key"],
+    base_url=model_config["base_url"],
 )
 
-set_default_openai_api(gemini_client)
+set_default_openai_api(ai_client)
 set_tracing_disabled(True)
 
-gemini_model = OpenAIChatCompletionsModel(
-    model=gemini_model_name,
-    openai_client=gemini_client
+ai_model = OpenAIChatCompletionsModel(
+    model=model_config["model"],
+    openai_client=ai_client
 )
 
 def start():
     agent = Agent(name="Assistant", 
                   instructions="You are a helpful assistant", 
-                  model=gemini_model
+                  model=ai_model
     )
 
     
-    
-    # Setup Interface
-    st.title("🤖 myAgent")
-    st.subheader(f"Developed by Rabeel Akram")
-    st.text(f"This AI agent is powered by {gemini_model_name}")
+    st.subheader(f"{selected_model} ({model_config['model']})")
     
     # Initialize chat history
     if "messages" not in st.session_state:
