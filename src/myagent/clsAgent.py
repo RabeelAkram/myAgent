@@ -4,6 +4,7 @@ import streamlit as st
 from agents import Agent, AsyncOpenAI, OpenAIChatCompletionsModel, Runner, set_default_openai_api, set_tracing_disabled
 from dotenv import load_dotenv
 from asgiref.sync import async_to_sync
+from agents.run import RunConfig
 
 load_dotenv()
 
@@ -57,12 +58,15 @@ ai_model = OpenAIChatCompletionsModel(
     openai_client=ai_client
 )
 
+# ai_config = RunConfig(model =ai_model,
+#                       openai_client=ai_client
+# )
+
 def start():
     agent = Agent(name="Assistant", 
-                  instructions="You are a helpful assistant", 
+                  instructions="You are DevHelper, an expert software engineer and programming assistant. You specialize in helping developers write, debug, and understand code in multiple languages including Python, .Net, SQL Server and more. When answering, include code examples when helpful, and always format code properly using markdown. If the user provides buggy code, help fix it and explain the issue.", 
                   model=ai_model
     )
-
     
     st.subheader(f"{selected_model} ({model_config['model']})")
     
@@ -92,6 +96,10 @@ def start():
 
         st.chat_message("assistant").markdown(ai_reply)
         st.session_state.messages.append({"role": "assistant", "content": ai_reply})
+
+        with open("AI_Response.md", "a", encoding="utf-8") as file:
+            file.write(f"### Prompt:\n{prompt}\n\n")
+            file.write(f"### Response:\n{response.final_output}\n\n---\n\n")
 
 # Render the UI
 start()
